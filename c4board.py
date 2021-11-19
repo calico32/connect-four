@@ -1,8 +1,7 @@
 import asyncio
 import curses
 from functools import reduce
-from math import inf
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
 import numpy as np  # type: ignore
 from scipy.signal import convolve2d  # type: ignore
@@ -47,11 +46,11 @@ class Board:
     # bottom right corner
     status_message: Optional[str] = None
 
-    def __init__(self, screen):
+    def __init__(self, screen: curses.window):
         self.screen = screen
 
     # check if board is full
-    def _is_full(self):
+    def _is_full(self) -> bool:
         return reduce(lambda a, col: col[BOARD_HEIGHT - 1] is not None and a, self.cols, True)
 
     # find the lowest empty row in a column
@@ -61,7 +60,7 @@ class Board:
 
         return reduce(find, reversed(list(enumerate(col))), 9999)
 
-    async def reset(self):
+    async def reset(self) -> None:
         self.cols = make_cols()
         self.lock = False
         self.game_over = False

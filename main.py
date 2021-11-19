@@ -2,7 +2,7 @@ import asyncio
 import curses
 
 from c4board import Board
-from c4token import Color, Token
+from c4token import Color
 
 screen = curses.initscr()
 

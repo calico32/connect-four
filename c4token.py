@@ -1,5 +1,4 @@
 import curses
-from enum import Enum
 
 
 class Color:
@@ -14,7 +13,7 @@ class Token:
     def __init__(self, color: int):
         self.color = color
 
-    def draw(self, y, x, screen):
+    def draw(self, y: int, x: int, screen: curses.window):
         screen.addstr(
             y, x,
             self.SYMBOL_TOP,
