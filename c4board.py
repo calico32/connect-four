@@ -40,6 +40,9 @@ class Board:
     current_turn = Color.RED
     game_over = False
 
+    winner: Optional[int] = None
+    """ -1 if tie """
+
     # lock the board while currently moving
     lock = False
 
@@ -64,6 +67,8 @@ class Board:
         self.cols = make_cols()
         self.lock = False
         self.game_over = False
+        self.winner = None
+        self.status_message = None
         self.current_turn = Color.RED
         self.screen.clear()
         await self.draw()
@@ -112,48 +117,10 @@ class Board:
 
         # check for win
         if winner := await self._check_win():
-            if winner == -1:
-                # tie
-                await self.draw_board(hide_turn=True)
-                draw_message = 'It\'s a draw!'
-                self.screen.addstr(
-                    top_left_y - 2,
-                    top_left_x + DRAWING_WIDTH // 2 - len(draw_message) // 2,
-                    draw_message
-                )
-            else:
-                winner_name = 'RED' if winner == Color.RED else 'YELLOW'
-                await self.draw_board(hide_turn=True)
-                win_message = f'{winner_name} wins!'
-
-                self.screen.addstr(
-                    top_left_y - 2,
-                    top_left_x + DRAWING_WIDTH // 2 - len(win_message) // 2,
-                    win_message
-                )
-
-                # draw colored color name
-                self.screen.addstr(
-                    top_left_y - 2,
-                    top_left_x + DRAWING_WIDTH // 2 - len(win_message) // 2,
-                    winner_name,
-                    (curses.color_pair(Color.RED)
-                     if winner == Color.RED
-                     else curses.color_pair(Color.YELLOW)) | curses.A_BOLD
-                )
-
-            restart_message = f'Press Space to play again'
-
-            self.screen.addstr(
-                top_left_y - 1,
-                top_left_x + DRAWING_WIDTH // 2 -
-                len(restart_message) // 2,
-                restart_message
-            )
-
-            self.screen.refresh()
-            self.game_over = True
             self.lock = True
+            self.game_over = True
+            self.winner = winner
+            await self.draw()
         else:
             # advance turn and unlock
             self.current_turn = Color.YELLOW if self.current_turn == Color.RED else Color.RED
@@ -231,33 +198,70 @@ class Board:
         top_left_x = width // 2 - DRAWING_WIDTH // 2
 
         if not hide_turn:
-            # turn message
-            turn_message = f'{"RED" if self.current_turn == Color.RED else "YELLOW"}, it\'s your turn!'
+            if self.winner:
+                if self.winner == -1:
+                    # tie
+                    draw_message = 'It\'s a draw!'
+                    self.screen.addstr(
+                        top_left_y - 2,
+                        top_left_x + DRAWING_WIDTH // 2 -
+                        len(draw_message) // 2,
+                        draw_message
+                    )
+                else:
+                    winner_name = 'RED' if self.winner == Color.RED else 'YELLOW'
+                    win_message = f'{winner_name} wins!'
 
-            # draw turn message
-            self.screen.addstr(
-                top_left_y - 2,
-                top_left_x + DRAWING_WIDTH // 2 - len(turn_message) // 2,
-                turn_message
-            )
+                    self.screen.addstr(
+                        top_left_y - 2,
+                        top_left_x + DRAWING_WIDTH // 2 -
+                        len(win_message) // 2,
+                        win_message
+                    )
 
-            # draw colored color name
-            self.screen.addstr(
-                top_left_y - 2,
-                top_left_x + DRAWING_WIDTH // 2 - len(turn_message) // 2,
-                "RED" if self.current_turn == Color.RED else "YELLOW",
-                (curses.color_pair(Color.RED)
-                 if self.current_turn == Color.RED
-                 else curses.color_pair(Color.YELLOW)) | curses.A_BOLD
-            )
+                    # draw colored color name
+                    self.screen.addstr(
+                        top_left_y - 2,
+                        top_left_x + DRAWING_WIDTH // 2 -
+                        len(win_message) // 2,
+                        winner_name,
+                        curses.color_pair(self.winner) | curses.A_BOLD
+                    )
 
-            # selected column indicator
-            self.screen.addstr(
-                top_left_y - 1,
-                top_left_x + self.selected_column * 6 + 3,
-                'v',
-                curses.color_pair(self.current_turn)
-            )
+                restart_message = f'Press Space to play again'
+
+                self.screen.addstr(
+                    top_left_y - 1,
+                    top_left_x + DRAWING_WIDTH // 2 -
+                    len(restart_message) // 2,
+                    restart_message
+                )
+            else:
+                # turn message
+                turn_message = f'{"RED" if self.current_turn == Color.RED else "YELLOW"}, it\'s your turn!'
+
+                # draw turn message
+                self.screen.addstr(
+                    top_left_y - 2,
+                    top_left_x + DRAWING_WIDTH // 2 - len(turn_message) // 2,
+                    turn_message
+                )
+
+                # draw colored color name
+                self.screen.addstr(
+                    top_left_y - 2,
+                    top_left_x + DRAWING_WIDTH // 2 - len(turn_message) // 2,
+                    "RED" if self.current_turn == Color.RED else "YELLOW",
+                    curses.color_pair(self.current_turn) | curses.A_BOLD
+                )
+
+                # selected column indicator
+                self.screen.addstr(
+                    top_left_y - 1,
+                    top_left_x + self.selected_column * 6 + 3,
+                    'v',
+                    curses.color_pair(self.current_turn)
+                )
         else:
             # clear turn indicator area
             self.screen.addstr(
