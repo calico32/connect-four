@@ -42,31 +42,34 @@ async def main():
                 await board.move_left()
             elif c == curses.KEY_RIGHT:
                 await board.move_right()
-            elif c == curses.KEY_ENTER or c == ord('\n'):
+            elif c == curses.KEY_ENTER or c == ord("\n"):
                 await board.drop_token()
-            elif c == ord(' '):
+            elif c == ord(" "):
                 if board.game_over:
                     await board.reset()
-            elif c == ord('q'):
+            elif c == ord("q"):
                 cleanup()
-                print('exiting')
+                print("exiting")
                 break
             elif c == curses.KEY_RESIZE:
                 # on window resize, redraw the board
                 await board.draw()
             else:
-                board.status_message = f'Unknown input: {bytes([c]).decode("utf-8") if 0 < c < 255 else c}'.replace(
-                    '\n', '\\n')
+                board.status_message = (
+                    f'Unknown input: {bytes([c]).decode("utf-8") if 0 < c < 255 else c}'
+                    .replace("\n", "\\n")
+                )
                 await board.draw_ui()
                 board.status_message = None
 
         except (KeyboardInterrupt, EOFError):
             cleanup()
-            print('exiting')
+            print("exiting")
             break
         except Exception as err:
             cleanup()
             raise err
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     asyncio.run(main())

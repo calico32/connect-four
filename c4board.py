@@ -21,15 +21,12 @@ horizontal_kernel = np.array([[1, 1, 1, 1]])
 vertical_kernel = np.transpose(horizontal_kernel)
 diag1_kernel = np.eye(4, dtype=np.uint8)
 diag2_kernel = np.fliplr(diag1_kernel)
-detection_kernels = [horizontal_kernel,
-                     vertical_kernel, diag1_kernel, diag2_kernel]
+detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]
 
 
 # initalize board
 def make_cols():
-    return [
-        [None for x in range(BOARD_HEIGHT)] for x in range(BOARD_WIDTH)
-    ]
+    return [[None for x in range(BOARD_HEIGHT)] for x in range(BOARD_WIDTH)]
 
 
 class Board:
@@ -54,7 +51,9 @@ class Board:
 
     # check if board is full
     def _is_full(self) -> bool:
-        return reduce(lambda a, col: col[BOARD_HEIGHT - 1] is not None and a, self.cols, True)
+        return reduce(
+            lambda a, col: col[BOARD_HEIGHT - 1] is not None and a, self.cols, True
+        )
 
     # find the lowest empty row in a column
     def _find_column_top(self, col: list[Optional[Token]]) -> int:
@@ -95,8 +94,7 @@ class Board:
 
         start_y = top_left_y - 1
         # final y position of the token
-        destination_y = top_left_y + 1 + \
-            (BOARD_HEIGHT - 1 - destination_row) * 2
+        destination_y = top_left_y + 1 + (BOARD_HEIGHT - 1 - destination_row) * 2
 
         x = top_left_x + 2 + self.selected_column * 6
 
@@ -123,7 +121,9 @@ class Board:
             await self.draw()
         else:
             # advance turn and unlock
-            self.current_turn = Color.YELLOW if self.current_turn == Color.RED else Color.RED
+            self.current_turn = (
+                Color.YELLOW if self.current_turn == Color.RED else Color.RED
+            )
             await self.draw()
             self.lock = False
 
@@ -157,37 +157,28 @@ class Board:
     async def draw_ui(self) -> None:
         height, width = self.screen.getmaxyx()
 
-        left_header = 'Connect Four'
-        right_header = '<-/-> to move, Return to drop'
-        left_footer = 'Ctrl+C or q to exit'
+        left_header = "Connect Four"
+        right_header = "<-/-> to move, Return to drop"
+        left_footer = "Ctrl+C or q to exit"
 
         # background
-        self.screen.addstr(0, 1, (width - 2) * ' ', curses.A_REVERSE)
+        self.screen.addstr(0, 1, (width - 2) * " ", curses.A_REVERSE)
 
+        self.screen.addstr(0, 3, left_header, curses.A_REVERSE)
         self.screen.addstr(
-            0, 3,
-            left_header,
-            curses.A_REVERSE
-        )
-        self.screen.addstr(
-            0, width - len(right_header) - 3,
-            right_header,
-            curses.A_REVERSE
+            0, width - len(right_header) - 3, right_header, curses.A_REVERSE
         )
 
         # background
-        self.screen.addstr(
-            height - 1, 1,
-            (width - 2) * ' ',
-            curses.A_REVERSE
-        )
+        self.screen.addstr(height - 1, 1, (width - 2) * " ", curses.A_REVERSE)
 
         self.screen.addstr(height - 1, 3, left_footer, curses.A_REVERSE)
         if self.status_message:
             self.screen.addstr(
-                height - 1, width - len(self.status_message) - 3,
+                height - 1,
+                width - len(self.status_message) - 3,
                 self.status_message,
-                curses.A_REVERSE
+                curses.A_REVERSE,
             )
         pass
 
@@ -201,50 +192,49 @@ class Board:
             if self.winner:
                 if self.winner == -1:
                     # tie
-                    draw_message = 'It\'s a draw!'
+                    draw_message = "It's a draw!"
                     self.screen.addstr(
                         top_left_y - 2,
-                        top_left_x + DRAWING_WIDTH // 2 -
-                        len(draw_message) // 2,
-                        draw_message
+                        top_left_x + DRAWING_WIDTH // 2 - len(draw_message) // 2,
+                        draw_message,
                     )
                 else:
-                    winner_name = 'RED' if self.winner == Color.RED else 'YELLOW'
-                    win_message = f'{winner_name} wins!'
+                    winner_name = "RED" if self.winner == Color.RED else "YELLOW"
+                    win_message = f"{winner_name} wins!"
 
                     self.screen.addstr(
                         top_left_y - 2,
-                        top_left_x + DRAWING_WIDTH // 2 -
-                        len(win_message) // 2,
-                        win_message
+                        top_left_x + DRAWING_WIDTH // 2 - len(win_message) // 2,
+                        win_message,
                     )
 
                     # draw colored color name
                     self.screen.addstr(
                         top_left_y - 2,
-                        top_left_x + DRAWING_WIDTH // 2 -
-                        len(win_message) // 2,
+                        top_left_x + DRAWING_WIDTH // 2 - len(win_message) // 2,
                         winner_name,
-                        curses.color_pair(self.winner) | curses.A_BOLD
+                        curses.color_pair(self.winner) | curses.A_BOLD,
                     )
 
-                restart_message = f'Press Space to play again'
+                restart_message = f"Press Space to play again"
 
                 self.screen.addstr(
                     top_left_y - 1,
-                    top_left_x + DRAWING_WIDTH // 2 -
-                    len(restart_message) // 2,
-                    restart_message
+                    top_left_x + DRAWING_WIDTH // 2 - len(restart_message) // 2,
+                    restart_message,
                 )
             else:
                 # turn message
-                turn_message = f'{"RED" if self.current_turn == Color.RED else "YELLOW"}, it\'s your turn!'
+                turn_message = (
+                    f'{"RED" if self.current_turn == Color.RED else "YELLOW"}, it\'s'
+                    " your turn!"
+                )
 
                 # draw turn message
                 self.screen.addstr(
                     top_left_y - 2,
                     top_left_x + DRAWING_WIDTH // 2 - len(turn_message) // 2,
-                    turn_message
+                    turn_message,
                 )
 
                 # draw colored color name
@@ -252,41 +242,36 @@ class Board:
                     top_left_y - 2,
                     top_left_x + DRAWING_WIDTH // 2 - len(turn_message) // 2,
                     "RED" if self.current_turn == Color.RED else "YELLOW",
-                    curses.color_pair(self.current_turn) | curses.A_BOLD
+                    curses.color_pair(self.current_turn) | curses.A_BOLD,
                 )
 
                 # selected column indicator
                 self.screen.addstr(
                     top_left_y - 1,
                     top_left_x + self.selected_column * 6 + 3,
-                    'v',
-                    curses.color_pair(self.current_turn)
+                    "v",
+                    curses.color_pair(self.current_turn),
                 )
         else:
             # clear turn indicator area
-            self.screen.addstr(
-                top_left_y - 2,
-                top_left_x,
-                DRAWING_WIDTH * ' '
-            )
-            self.screen.addstr(
-                top_left_y - 1,
-                top_left_x,
-                DRAWING_WIDTH * ' '
-            )
+            self.screen.addstr(top_left_y - 2, top_left_x, DRAWING_WIDTH * " ")
+            self.screen.addstr(top_left_y - 1, top_left_x, DRAWING_WIDTH * " ")
 
         # board itself
         self.screen.addstr(
-            top_left_y, top_left_x,
+            top_left_y,
+            top_left_x,
             f'╔{"╤".join("═   ═" for _ in range(BOARD_WIDTH))}╗',
         )
         for i in range(DRAWING_HEIGHT + 1):
             self.screen.addstr(
-                top_left_y + i + 1, top_left_x,
+                top_left_y + i + 1,
+                top_left_x,
                 f'║{"│".join("     " for _ in range(BOARD_WIDTH))}║',
             )
         self.screen.addstr(
-            top_left_y + DRAWING_HEIGHT + 1, top_left_x,
+            top_left_y + DRAWING_HEIGHT + 1,
+            top_left_x,
             f'╚{"╧".join("═════" for _ in range(BOARD_WIDTH))}╝',
         )
 
@@ -299,7 +284,7 @@ class Board:
                     token.draw(
                         top_left_y + 1 + (BOARD_HEIGHT - 1 - row) * 2,
                         top_left_x + 2 + col * 6,
-                        self.screen
+                        self.screen,
                     )
 
     async def draw(self) -> None:
@@ -313,9 +298,9 @@ class Board:
 
         # too small, but we can still draw an error message
         if height < DRAWING_HEIGHT + 6 or width < DRAWING_WIDTH + 16:
-            self.screen.addstr(0, 0, 'Screen too small!')
-            self.screen.addstr(1, 0, 'Please increase the size')
-            self.screen.addstr(2, 0, 'of your terminal window.')
+            self.screen.addstr(0, 0, "Screen too small!")
+            self.screen.addstr(1, 0, "Please increase the size")
+            self.screen.addstr(2, 0, "of your terminal window.")
             return
 
         # top bar and bottom bar
@@ -330,14 +315,15 @@ class Board:
         # mask of self and opponent's tokens/blanks
         # 1 = self, 0 = opponent/blank
         red_mask, yellow_mask = map(
-            lambda color: list(map(
-                lambda col: list(map(
-                    lambda t: 1 if t and t.color == color else 0,
-                    col
-                )),
-                self.cols
-            )),
-            [Color.RED, Color.YELLOW]
+            lambda color: list(
+                map(
+                    lambda col: list(
+                        map(lambda t: 1 if t and t.color == color else 0, col)
+                    ),
+                    self.cols,
+                )
+            ),
+            [Color.RED, Color.YELLOW],
         )
 
         # loop over kernels
