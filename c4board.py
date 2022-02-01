@@ -1,7 +1,8 @@
 import asyncio
 import curses
 from functools import reduce
-from typing import Optional, Union
+from random import randint
+from typing import List
 
 import numpy as np  # type: ignore
 from scipy.signal import convolve2d  # type: ignore
@@ -31,23 +32,29 @@ def make_cols():
 
 class Board:
     # internal representation of the board
-    cols: list[list[Union[Token, None]]] = make_cols()
+    cols: List[List[Token | None]]
 
     selected_column: int = BOARD_WIDTH // 2
-    current_turn = Color.RED
-    game_over = False
+    current_turn: int
+    game_over: bool
 
-    winner: Optional[int] = None
+    winner: int | None
     """ -1 if tie """
 
     # lock the board while currently moving
-    lock = False
+    lock: bool
 
     # bottom right corner
-    status_message: Optional[str] = None
+    status_message: str | None
 
     def __init__(self, screen: curses.window):
         self.screen = screen
+        self.cols = make_cols()
+        self.lock = False
+        self.game_over = False
+        self.status_message = None
+        self.current_turn = randint(1, 2)
+        self.winner = None
 
     # check if board is full
     def _is_full(self) -> bool:
@@ -56,8 +63,8 @@ class Board:
         )
 
     # find the lowest empty row in a column
-    def _find_column_top(self, col: list[Optional[Token]]) -> int:
-        def find(a: int, t: tuple[int, Optional[Token]]):
+    def _find_column_top(self, col: list[Token | None]) -> int:
+        def find(a: int, t: tuple[int, Token | None]):
             return t[0] if t[1] is None else a
 
         return reduce(find, reversed(list(enumerate(col))), 9999)
@@ -66,9 +73,13 @@ class Board:
         self.cols = make_cols()
         self.lock = False
         self.game_over = False
-        self.winner = None
         self.status_message = None
-        self.current_turn = Color.RED
+        self.current_turn = (
+            self.winner
+            if (self.winner is not None and self.winner != -1)
+            else randint(1, 2)
+        )
+        self.winner = None
         self.screen.clear()
         await self.draw()
 
@@ -311,7 +322,7 @@ class Board:
 
         self.screen.refresh()
 
-    async def _check_win(self) -> Optional[int]:
+    async def _check_win(self) -> int | None:
         # mask of self and opponent's tokens/blanks
         # 1 = self, 0 = opponent/blank
         red_mask, yellow_mask = map(
