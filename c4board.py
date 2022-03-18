@@ -1,27 +1,53 @@
+# async runtime, part of python standard library
 import asyncio
+
+# curses window drawing library, part of python standard library
 import curses
+
+# functional reduce, part of python standard library
 from functools import reduce
+
+# random number generator, part of python standard library
 from random import randint
+
+# type annotations, part of python standard library
 from typing import List
 
-import numpy as np  # type: ignore
+"""
+numpy library, https://github.com/numpy/numpy
+Copyright (c) 2005-2022, NumPy Developers
+BSD-3-Clause License
+See LICENSES.txt for more information
+"""
+import numpy as np
+
+"""
+scipy library, https://github.com/scipy/scipy
+Copyright (c) 2001-2002 Enthought, Inc. 2003-2022, SciPy Developers
+BSD-3-Clause License
+See LICENSES.txt for more information
+"""
 from scipy.signal import convolve2d  # type: ignore
 
+# color "enum" and token class, from ./c4token.py
 from c4token import Color, Token
 
 # constants
-# width and height in tokens
+# board size (in tokens)
 BOARD_WIDTH = 7
 BOARD_HEIGHT = 6
-# width and height in characters (including padding and border)
+# board size in characters (including padding and border)
 DRAWING_HEIGHT = (BOARD_HEIGHT - 1) * 2 + 2
 DRAWING_WIDTH = BOARD_WIDTH * 6 + 2
 
-# for win detection
+# win detection kernels
 horizontal_kernel = np.array([[1, 1, 1, 1]])
 vertical_kernel = np.transpose(horizontal_kernel)
+# creates a 2d array, with 1s on the diagonal and 0s elsewhere
 diag1_kernel = np.eye(4, dtype=np.uint8)
+# horizontally mirrored version of diag1_kernel
 diag2_kernel = np.fliplr(diag1_kernel)
+
 detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]
 
 
@@ -58,14 +84,15 @@ class Board:
 
     # check if board is full
     def _is_full(self) -> bool:
+        # check if each cell at the top of each column is filled
         return reduce(
             lambda a, col: col[BOARD_HEIGHT - 1] is not None and a, self.cols, True
         )
 
     # find the lowest empty row in a column
     def _find_column_top(self, col: list[Token | None]) -> int:
-        def find(a: int, t: tuple[int, Token | None]):
-            return t[0] if t[1] is None else a
+        def find(last: int, location: tuple[int, Token | None]):
+            return location[0] if location[1] is None else last
 
         return reduce(find, reversed(list(enumerate(col))), 9999)
 
@@ -169,7 +196,7 @@ class Board:
         height, width = self.screen.getmaxyx()
 
         left_header = "Connect Four"
-        right_header = "<-/-> to move, Return to drop"
+        right_header = "<-/-> to move, Return/Space to drop"
         left_footer = "Ctrl+C or q to exit"
 
         # background
@@ -308,7 +335,7 @@ class Board:
             return
 
         # too small, but we can still draw an error message
-        if height < DRAWING_HEIGHT + 6 or width < DRAWING_WIDTH + 16:
+        if height < DRAWING_HEIGHT + 6 or width < DRAWING_WIDTH + 20:
             self.screen.addstr(0, 0, "Screen too small!")
             self.screen.addstr(1, 0, "Please increase the size")
             self.screen.addstr(2, 0, "of your terminal window.")
@@ -322,20 +349,17 @@ class Board:
 
         self.screen.refresh()
 
+    def mask(self, color: int) -> List[List[int]]:
+        return [
+            [1 if (cell and cell.color == color) else 0 for cell in col]
+            for col in self.cols
+        ]
+
     async def _check_win(self) -> int | None:
         # mask of self and opponent's tokens/blanks
         # 1 = self, 0 = opponent/blank
-        red_mask, yellow_mask = map(
-            lambda color: list(
-                map(
-                    lambda col: list(
-                        map(lambda t: 1 if t and t.color == color else 0, col)
-                    ),
-                    self.cols,
-                )
-            ),
-            [Color.RED, Color.YELLOW],
-        )
+        red_mask = self.mask(Color.RED)
+        yellow_mask = self.mask(Color.YELLOW)
 
         # loop over kernels
         for kernel in detection_kernels:
@@ -347,6 +371,9 @@ class Board:
                 return Color.YELLOW
 
         if self._is_full():
+            # no one won and the board is full
+            # it's a tie
             return -1
 
+        # no win, no tie
         return None
